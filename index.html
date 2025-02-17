@@ -1,75 +1,96 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>PeerJS Chat</title>
     <style>
-        #messages { max-height: 250px; overflow-y: auto; background: #f0f0f0; padding: 10px; margin-bottom: 10px; }
-        #messageInput { width: 70%; }
-        button { width: 25%; margin: 5px; }
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: black;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        .flower {
+            width: 200px;
+            height: 200px;
+            transform-style: preserve-3d;
+            animation: rotate 10s linear infinite;
+            position: relative;
+        }
+
+        .petal {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: black;
+            border: 2px solid white;
+            transform-origin: center center;
+        }
+
+        .petal:nth-child(1) {
+            transform: rotateZ(45deg) rotateY(0deg) translateZ(150px);
+        }
+
+        .petal:nth-child(2) {
+            transform: rotateZ(45deg) rotateY(45deg) translateZ(150px);
+        }
+
+        .petal:nth-child(3) {
+            transform: rotateZ(45deg) rotateY(90deg) translateZ(150px);
+        }
+
+        .petal:nth-child(4) {
+            transform: rotateZ(45deg) rotateY(135deg) translateZ(150px);
+        }
+
+        .petal:nth-child(5) {
+            transform: rotateZ(45deg) rotateY(180deg) translateZ(150px);
+        }
+
+        .petal:nth-child(6) {
+            transform: rotateZ(45deg) rotateY(225deg) translateZ(150px);
+        }
+
+        .petal:nth-child(7) {
+            transform: rotateZ(45deg) rotateY(270deg) translateZ(150px);
+        }
+
+        .petal:nth-child(8) {
+            transform: rotateZ(45deg) rotateY(315deg) translateZ(150px);
+        }
+
+        .flower .center {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: black;
+            border-radius: 50%;
+            border: 2px solid white;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes rotate {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
     </style>
 </head>
 <body>
-    <h2>Peer-to-Peer Chat</h2>
-    <p>Your Peer ID: <span id="peerId">Loading...</span></p>
-    <input type="text" id="friendId" placeholder="Enter friend's Peer ID to connect">
-    <button onclick="connect()">Connect</button>
-    <div id="messages">No messages yet</div>
-    <input type="text" id="messageInput" placeholder="Type message here...">
-    <button onclick="sendMessage()">Send</button>
-
-    <script src="https://cdn.peerjs.com/peerjs.min.js"></script>
-    <script>
-        const peer = new Peer();
-        let connection;
-
-        // Display Peer ID when generated
-        peer.on('open', function(id) {
-            document.getElementById('peerId').textContent = id;
-        });
-
-        // Handle incoming connections
-        peer.on('connection', function(conn) {
-            connection = conn;
-            connection.on('data', function(data) {
-                createMessage(data, 'received');
-            });
-        });
-
-        // Connect to friend's Peer ID
-        function connect() {
-            const friendId = document.getElementById('friendId').value.trim();
-            if (!friendId) return;
-            
-            connection = peer.connect(friendId);
-            connection.on('open', function() {
-                console.log('Connected to friend successfully');
-            });
-            connection.on('data', function(data) {
-                createMessage(data, 'received');
-            });
-        }
-
-        // Send message via PeerJS connection
-        function sendMessage() {
-            const message = document.getElementById('messageInput').value.trim();
-            if (!message || !connection) return;
-            
-            connection.send(message);
-            createMessage(message, 'sent');
-            document.getElementById('messageInput').value = '';
-        }
-
-        // Add messages to the chat log with styling
-        function createMessage(text, type) {
-            const color = type === 'sent' ? '#e6fefb' : '#fff';
-            const message = document.createElement('div');
-            message.style.background = color;
-            message.style.margin = '5px';
-            message.style.padding = '8px';
-            message.textContent = text;
-            document.getElementById('messages').appendChild(message);
-            document.getElementById('messages').scrollTop = message.offsetTop;
-        }
-    </script>
+    <div class="flower">
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="center"></div>
+    </div>
 </body>
 </html>
