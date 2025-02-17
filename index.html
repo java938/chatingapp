@@ -1,142 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Chat</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
+import { useState, useEffect } from 'react';
+import io from 'socket.io-client';
 
-        body {
-            background-color: #1a1a1a;
-            color: white;
-            padding: 20px;
-        }
+const socket = io('https://your-replit-backend-url.com');
 
-        .chat-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #2d2d2d;
-            border-radius: 10px;
-            padding: 20px;
-        }
+export default function Chat() {
+  const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState('');
+  const [username, setUsername] = useState('');
 
-        .messages {
-            height: 500px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-            background: #333;
-            border-radius: 5px;
-            padding: 15px;
-        }
+  useEffect(() => {
+    socket.on('connect', () => {
+      setUsername(prompt('Enter your username:'));
+      socket.emit('join', username);
+    });
 
-        .message {
-            margin-bottom: 15px;
-            padding: 10px;
-            border-radius: 5px;
-            max-width: 70%;
-        }
+    socket.on('message', (msg) => {
+      setMessages(prev => [...prev, msg]);
+    });
 
-        .message.user {
-            background: #4CAF50;
-            margin-left: auto;
-        }
+    socket.on('user joined', (user) => {
+      setMessages(prev => [...prev, { text: `${user} joined the chat!`, isSystem: true }]);
+    });
+  }, []);
 
-        .message.other {
-            background: #03A9F4;
-            margin-right: auto;
-        }
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (message.trim()) {
+      socket.emit('message', message);
+      setMessage('');
+    }
+  };
 
-        .message .username {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .input-area {
-            display: flex;
-            gap: 10px;
-        }
-
-        .input-area input {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-        }
-
-        .input-area button {
-            padding: 10px 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-    <div class="chat-container">
-        <div class="messages" id="messages"></div>
-        <div class="input-area">
-            <input type="text" id="messageInput" placeholder="Type a message...">
-            <button onclick="sendMessage()">Send</button>
-        </div>
+  return (
+    <div style={{ padding: '20px' }}>
+      <h1>Chat Room</h1>
+      <div style={{ height: '400px', border: '1px solid #ccc', padding: '10px', overflowY: 'auto' }}>
+        {messages.map((msg, i) => (
+          <div key={i} style={{ margin: '5px 0' }}>
+            {msg.isSystem ? (
+              <em>{msg.text}</em>
+            ) : (
+              <span>{msg.username}: {msg.text}</span>
+            )}
+          </div>
+        ))}
+      </div>
+      <form onSubmit={handleSubmit} style={{ marginTop: '10px' }}>
+        <input
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Type a message..."
+          style={{ padding: '5px', width: '200px' }}
+        />
+        <button type="submit" style={{ marginLeft: '5px', padding: '5px 10px' }}>
+          Send
+        </button>
+      </form>
     </div>
-
-    <script>
-        let ws;
-        let username = '';
-
-        function connect() {
-            ws = new WebSocket('wss://your-backend-url.com'); // Replace with your backend URL
-
-            ws.onopen = () => {
-                if (!username) {
-                    username = prompt('Enter your username:');
-                    ws.send(JSON.stringify({ type: 'username', name: username }));
-                }
-            };
-
-            ws.onmessage = (e) => {
-                const data = JSON.parse(e.data);
-                displayMessage(data);
-            };
-
-            ws.onclose = () => {
-                alert('Connection lost. Refresh to reconnect.');
-            };
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            if (input.value.trim() && ws.readyState === 1) {
-                ws.send(JSON.stringify({
-                    type: 'message',
-                    text: input.value
-                }));
-                input.value = '';
-            }
-        }
-
-        function displayMessage(data) {
-            const messages = document.getElementById('messages');
-            const div = document.createElement('div');
-            div.className = `message ${data.name === username ? 'user' : 'other'}`;
-            div.innerHTML = `
-                <div class="username">${data.name}:</div>
-                <div>${data.text}</div>
-            `;
-            messages.appendChild(div);
-            messages.scrollTop = messages.scrollHeight;
-        }
-
-        // Initial connection
-        connect();
-    </script>
-</body>
-</html>
+  );
+}
