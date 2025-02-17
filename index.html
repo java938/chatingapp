@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            padding: 20px;
+        }
+
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .messages {
+            height: 500px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            background: #333;
+            border-radius: 5px;
+            padding: 15px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 70%;
+        }
+
+        .message.user {
+            background: #4CAF50;
+            margin-left: auto;
+        }
+
+        .message.other {
+            background: #03A9F4;
+            margin-right: auto;
+        }
+
+        .message .username {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .input-area button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="messages" id="messages"></div>
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Type a message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let username = '';
+
+        function connect() {
+            ws = new WebSocket('wss://your-backend-url.com'); // Replace with your backend URL
+
+            ws.onopen = () => {
+                if (!username) {
+                    username = prompt('Enter your username:');
+                    ws.send(JSON.stringify({ type: 'username', name: username }));
+                }
+            };
+
+            ws.onmessage = (e) => {
+                const data = JSON.parse(e.data);
+                displayMessage(data);
+            };
+
+            ws.onclose = () => {
+                alert('Connection lost. Refresh to reconnect.');
+            };
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            if (input.value.trim() && ws.readyState === 1) {
+                ws.send(JSON.stringify({
+                    type: 'message',
+                    text: input.value
+                }));
+                input.value = '';
+            }
+        }
+
+        function displayMessage(data) {
+            const messages = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = `message ${data.name === username ? 'user' : 'other'}`;
+            div.innerHTML = `
+                <div class="username">${data.name}:</div>
+                <div>${data.text}</div>
+            `;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        // Initial connection
+        connect();
+    </script>
+</body>
+</html>
