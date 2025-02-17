@@ -1,60 +1,75 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Simple Chat App</title>
+    <title>PeerJS Chat</title>
     <style>
-        #messages { max-height: 300px; overflow-y: auto; }
+        #messages { max-height: 250px; overflow-y: auto; background: #f0f0f0; padding: 10px; margin-bottom: 10px; }
         #messageInput { width: 70%; }
-        button { width: 25%; margin-left: 5px; }
+        button { width: 25%; margin: 5px; }
     </style>
 </head>
 <body>
-    <h2>Chat with Your Friends!</h2>
-    <div id="messages"></div>
-    <input type="text" id="messageInput" placeholder="Enter message..." />
+    <h2>Peer-to-Peer Chat</h2>
+    <p>Your Peer ID: <span id="peerId">Loading...</span></p>
+    <input type="text" id="friendId" placeholder="Enter friend's Peer ID to connect">
+    <button onclick="connect()">Connect</button>
+    <div id="messages">No messages yet</div>
+    <input type="text" id="messageInput" placeholder="Type message here...">
     <button onclick="sendMessage()">Send</button>
 
-    <!-- Firebase Configuration -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+    <script src="https://cdn.peerjs.com/peerjs.min.js"></script>
     <script>
-        // Replace with your Firebase configuration (from firebase console)
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        const peer = new Peer();
+        let connection;
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const messagesRef = database.ref('messages');
+        // Display Peer ID when generated
+        peer.on('open', function(id) {
+            document.getElementById('peerId').textContent = id;
+        });
 
-        // Function to send message
+        // Handle incoming connections
+        peer.on('connection', function(conn) {
+            connection = conn;
+            connection.on('data', function(data) {
+                createMessage(data, 'received');
+            });
+        });
+
+        // Connect to friend's Peer ID
+        function connect() {
+            const friendId = document.getElementById('friendId').value.trim();
+            if (!friendId) return;
+            
+            connection = peer.connect(friendId);
+            connection.on('open', function() {
+                console.log('Connected to friend successfully');
+            });
+            connection.on('data', function(data) {
+                createMessage(data, 'received');
+            });
+        }
+
+        // Send message via PeerJS connection
         function sendMessage() {
             const message = document.getElementById('messageInput').value.trim();
-            if (message === '') return;
-
-            messagesRef.push({
-                text: message,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            });
-
+            if (!message || !connection) return;
+            
+            connection.send(message);
+            createMessage(message, 'sent');
             document.getElementById('messageInput').value = '';
         }
 
-        // Listen for incoming messages
-        messagesRef.on('child_added', function(snapshot) {
-            const msg = snapshot.val();
-            const msgElement = document.createElement('div');
-            msgElement.textContent = msg.text;
-            document.getElementById('messages').appendChild(msgElement);
-            document.getElementById('messages').scrollTop = msgElement.offsetTop;
-        });
+        // Add messages to the chat log with styling
+        function createMessage(text, type) {
+            const color = type === 'sent' ? '#e6fefb' : '#fff';
+            const message = document.createElement('div');
+            message.style.background = color;
+            message.style.margin = '5px';
+            message.style.padding = '8px';
+            message.textContent = text;
+            document.getElementById('messages').appendChild(message);
+            document.getElementById('messages').scrollTop = message.offsetTop;
+        }
     </script>
 </body>
 </html>
